@@ -1,3 +1,4 @@
+-- Extensões úteis (UUID opcional; pode tirar se preferir BIGINT)
 create extension if not exists "uuid-ossp";
 
 create table if not exists app_user (
