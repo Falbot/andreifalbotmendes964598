@@ -1,0 +1,17 @@
+HTTP/1.1 200 OK
+Date: Thu, 15 Jan 2026 20:29:31 GMT
+Content-Type: application/zip
+Content-Length: 17561
+Connection: keep-alive
+CF-RAY: 9be8202c69a49a86-GRU
+content-disposition: attachment; filename="backend.zip"
+strict-transport-security: max-age=15552000; includeSubDomains
+Last-Modified: Thu, 15 Jan 2026 20:29:31 GMT
+CF-Cache-Status: MISS
+Expires: Thu, 15 Jan 2026 21:29:31 GMT
+Cache-Control: public, max-age=3600
+Accept-Ranges: bytes
+Set-Cookie: __cf_bm=Z0Drz4eWwrWjb0teFN6iDj_JEeBbquXKRsSjiBoGfBg-1768508971-1.0.1.1-YM0B2c7GvsuVV2MoA8wvpaHjjzvRbXoBJvXC1bC6SAsVhfby_z9NL2TbUbn8ves_h5.4WwyBUZz1mLbL.Nps.4OmDmxUE_3phcnYIcg2lwY; path=/; expires=Thu, 15-Jan-26 20:59:31 GMT; domain=.spring.io; HttpOnly; Secure; SameSite=None
+Server: cloudflare
+alt-svc: h3=":443"; ma=86400
+
