@@ -1,0 +1,74 @@
+package br.com.falbot.seplag.backend.api;
+
+import br.com.falbot.seplag.backend.api.dto.ArtistaRequests;
+import br.com.falbot.seplag.backend.api.dto.Responses;
+import br.com.falbot.seplag.backend.dominio.TipoArtista;
+import br.com.falbot.seplag.backend.servico.ArtistaServico;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/artistas")
+public class ArtistaController {
+
+    private final ArtistaServico servico;
+
+    public ArtistaController(ArtistaServico servico) {
+        this.servico = servico;
+    }
+
+    @GetMapping
+    public Page<Responses.ArtistaResponse> listar(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) TipoArtista tipo,
+            Pageable pageable
+    ) {
+        return servico.listar(nome, tipo, pageable)
+                .map(a -> new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm()));
+    }
+
+    @GetMapping("/{id}")
+    public Responses.ArtistaResponse obter(@PathVariable UUID id) {
+        var a = servico.obter(id);
+        return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
+    }
+
+    @PostMapping
+    public Responses.ArtistaResponse criar(@RequestBody @Valid ArtistaRequests.Criar req) {
+        var a = servico.criar(req.nome(), req.tipo());
+        return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
+    }
+
+    @PutMapping("/{id}")
+    public Responses.ArtistaResponse atualizar(@PathVariable UUID id, @RequestBody @Valid ArtistaRequests.Atualizar req) {
+        var a = servico.atualizar(id, req.nome(), req.tipo());
+        return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
+    }
+
+    @DeleteMapping("/{id}")
+    public void excluir(@PathVariable UUID id) {
+        servico.excluir(id);
+    }
+
+    @GetMapping("/{id}/albuns")
+    public List<Responses.AlbumResponse> listarAlbuns(@PathVariable UUID id) {
+        return servico.listarAlbuns(id).stream()
+                .map(al -> new Responses.AlbumResponse(al.getId(), al.getTitulo(), al.getAnoLancamento(), al.getCriadoEm(), al.getAtualizadoEm()))
+                .toList();
+    }
+
+    @PostMapping("/{id}/albuns/{albumId}")
+    public void vincular(@PathVariable UUID id, @PathVariable UUID albumId) {
+        servico.vincularAlbum(id, albumId);
+    }
+
+    @DeleteMapping("/{id}/albuns/{albumId}")
+    public void desvincular(@PathVariable UUID id, @PathVariable UUID albumId) {
+        servico.desvincularAlbum(id, albumId);
+    }
+}
