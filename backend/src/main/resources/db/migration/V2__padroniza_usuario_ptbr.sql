@@ -7,4 +7,3 @@ alter table if exists usuario
 
 alter table if exists usuario
   rename column created_at to criado_em;
-

@@ -80,9 +80,8 @@ public class ArtistaServico {
 
     @Transactional(readOnly = true)
     public List<Album> listarAlbuns(UUID artistaId) {
-        if (!artistaRepo.existsById(artistaId)) {
-            throw new EntityNotFoundException("Artista não encontrado!");
-        }
+        this.obter(artistaId); // garante 404 se artista não existir
         return albumRepo.listarPorArtistaId(artistaId);
     }
+
 }

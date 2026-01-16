@@ -58,7 +58,9 @@ public class ArtistaController {
     @GetMapping("/{id}/albuns")
     public List<Responses.AlbumResponse> listarAlbuns(@PathVariable UUID id) {
         return servico.listarAlbuns(id).stream()
-                .map(al -> new Responses.AlbumResponse(al.getId(), al.getTitulo(), al.getAnoLancamento(), al.getCriadoEm(), al.getAtualizadoEm()))
+                .map(al -> new Responses.AlbumResponse(
+                        al.getId(), al.getTitulo(), al.getAnoLancamento(),
+                        al.getCriadoEm(), al.getAtualizadoEm()))
                 .toList();
     }
 
