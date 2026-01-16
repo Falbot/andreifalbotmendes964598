@@ -34,6 +34,7 @@ public class JwtServico {
                 .issuedAt(Date.from(agora))
                 .expiration(Date.from(exp))
                 .signWith(key)
+                .id(UUID.randomUUID().toString())
                 .compact();
     }
 
