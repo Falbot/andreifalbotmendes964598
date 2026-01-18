@@ -2,10 +2,13 @@ package br.com.falbot.seplag.backend.api.erro;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,4 +43,43 @@ public class ApiErrorHandler {
     public Map<String, Object> internal(Exception ex) {
         return Map.of("mensagem", "erro_interno");
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Map<String, Object> jsonInvalido(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof InvalidFormatException ife) {
+            Class<?> target = ife.getTargetType();
+
+            //Tenta descobrir o campo que falhou (ex: "tipo")
+            String campo = (ife.getPath() != null && !ife.getPath().isEmpty())
+                    ? ife.getPath().get(0).getFieldName()
+                    : null;
+
+            //Se for enum, devolve os valores aceitos
+            if (target != null && target.isEnum()) {
+                String[] esperados = Arrays.stream(target.getEnumConstants())
+                        .map(Object::toString)
+                        .toArray(String[]::new);
+
+                if (campo != null) {
+                    return Map.of(
+                            "mensagem", "valor_invalido",
+                            "campo", campo,
+                            "valoresEsperados", esperados
+                    );
+                }
+
+                return Map.of(
+                        "mensagem", "valor_invalido",
+                        "valoresEsperados", esperados
+                );
+            }
+        }
+
+        //Fallback JSON malformado, tipo errado etc.
+        return Map.of("mensagem", "json_invalido");
+    }
+
 }
