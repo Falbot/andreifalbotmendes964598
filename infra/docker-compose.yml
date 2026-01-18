@@ -44,7 +44,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 minio minio12345 &&
       mc mb -p local/app-bucket &&
-      mc anonymous set download local/app-bucket &&
+      mc anonymous set none local/app-bucket &&
       echo 'MinIO bucket ready: app-bucket'
       "
     restart: "no"

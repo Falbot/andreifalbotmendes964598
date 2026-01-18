@@ -7,7 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
 @RestController
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class AlbumController {
 
     private final AlbumServico servico;
+    private final br.com.falbot.seplag.backend.servico.CapaAlbumServico capaServico;
 
-    public AlbumController(AlbumServico servico) {
+    public AlbumController(AlbumServico servico, br.com.falbot.seplag.backend.servico.CapaAlbumServico capaServico) {
         this.servico = servico;
+        this.capaServico = capaServico;
     }
 
     @GetMapping
@@ -51,5 +54,18 @@ public class AlbumController {
     @DeleteMapping("/{id}")
     public void excluir(@PathVariable UUID id) {
         servico.excluir(id);
+    }
+
+    @PostMapping(path = "/{id}/capa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public br.com.falbot.seplag.backend.servico.CapaAlbumServico.LinkPresignadoResponse enviarCapa(
+            @PathVariable UUID id,
+            @RequestPart("arquivo") MultipartFile arquivo
+    ) {
+        return capaServico.enviar(id, arquivo);
+    }
+
+    @GetMapping("/{id}/capa/link")
+    public br.com.falbot.seplag.backend.servico.CapaAlbumServico.LinkPresignadoResponse obterLinkCapa(@PathVariable UUID id) {
+        return capaServico.gerarLink(id);
     }
 }
