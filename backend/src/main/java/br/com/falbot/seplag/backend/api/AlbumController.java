@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
@@ -41,9 +43,22 @@ public class AlbumController {
     }
 
     @PostMapping
-    public Responses.AlbumResponse criar(@RequestBody @Valid AlbumRequests.Criar req) {
+    public ResponseEntity<Responses.AlbumResponse> criar(
+            @RequestBody @Valid AlbumRequests.Criar req,
+            UriComponentsBuilder uriBuilder
+    ) {
         var a = servico.criar(req.titulo(), req.anoLancamento());
-        return new Responses.AlbumResponse(a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm());
+
+        var resp = new Responses.AlbumResponse(
+                a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm()
+        );
+
+        var location = uriBuilder
+                .path("/api/albuns/{id}")
+                .buildAndExpand(resp.id())
+                .toUri();
+
+        return ResponseEntity.created(location).body(resp);
     }
 
     @PutMapping("/{id}")
@@ -53,8 +68,9 @@ public class AlbumController {
     }
 
     @DeleteMapping("/{id}")
-    public void excluir(@PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         servico.excluir(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(path = "/{id}/capa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

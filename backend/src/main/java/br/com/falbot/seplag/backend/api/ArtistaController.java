@@ -7,6 +7,8 @@ import br.com.falbot.seplag.backend.servico.ArtistaServico;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,9 +41,21 @@ public class ArtistaController {
     }
 
     @PostMapping
-    public Responses.ArtistaResponse criar(@RequestBody @Valid ArtistaRequests.Criar req) {
+    public ResponseEntity<Responses.ArtistaResponse> criar(
+            @RequestBody @Valid ArtistaRequests.Criar req,
+            UriComponentsBuilder uriBuilder
+    ) {
         var a = servico.criar(req.nome(), req.tipo());
-        return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
+
+        var resp = new Responses.ArtistaResponse(
+                a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm()
+        );
+
+        var location = uriBuilder
+                .path("/api/artistas/{id}")
+                .buildAndExpand(resp.id())
+                .toUri();
+        return ResponseEntity.created(location).body(resp);
     }
 
     @PutMapping("/{id}")
@@ -51,8 +65,9 @@ public class ArtistaController {
     }
 
     @DeleteMapping("/{id}")
-    public void excluir(@PathVariable UUID id) {
+    public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         servico.excluir(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/albuns")
@@ -65,12 +80,14 @@ public class ArtistaController {
     }
 
     @PostMapping("/{id}/albuns/{albumId}")
-    public void vincular(@PathVariable UUID id, @PathVariable UUID albumId) {
+    public ResponseEntity<Void> vincular(@PathVariable UUID id, @PathVariable UUID albumId) {
         servico.vincularAlbum(id, albumId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/albuns/{albumId}")
-    public void desvincular(@PathVariable UUID id, @PathVariable UUID albumId) {
+    public ResponseEntity<Void> desvincular(@PathVariable UUID id, @PathVariable UUID albumId) {
         servico.desvincularAlbum(id, albumId);
+        return ResponseEntity.noContent().build();
     }
 }
