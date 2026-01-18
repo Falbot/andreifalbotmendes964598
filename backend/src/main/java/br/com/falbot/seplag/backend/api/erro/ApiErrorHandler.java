@@ -19,6 +19,12 @@ public class ApiErrorHandler {
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Map<String, Object> badRequest(IllegalArgumentException ex) {
+        return Map.of("mensagem", ex.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Map<String, Object> validation(MethodArgumentNotValidException ex) {
         Map<String, String> campos = new HashMap<>();
@@ -26,5 +32,12 @@ public class ApiErrorHandler {
             campos.put(fe.getField(), fe.getDefaultMessage());
         }
         return Map.of("mensagem", "validacao_invalida", "campos", campos);
+    }
+
+    //Fallback pra não vazar stacktrace cru
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(Exception.class)
+    public Map<String, Object> internal(Exception ex) {
+        return Map.of("mensagem", "erro_interno");
     }
 }

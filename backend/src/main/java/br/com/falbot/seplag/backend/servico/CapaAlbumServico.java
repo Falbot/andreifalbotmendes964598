@@ -132,4 +132,22 @@ public class CapaAlbumServico {
     }
 
     public record LinkPresignadoResponse(String url, Instant expiraEm) {}
+
+    @Transactional
+    public void remover(UUID albumId) {
+        // garante 404 se álbum não existir
+        albumServico.obter(albumId);
+
+        var capa = capaRepo.findByAlbumId(albumId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Capa do álbum não encontrada!"));
+
+        // remove no MinIO
+        s3.deleteObject(DeleteObjectRequest.builder()
+                .bucket(props.bucket)
+                .key(capa.getObjetoChave())
+                .build());
+
+        // remove metadados
+        capaRepo.delete(capa);
+    }
 }

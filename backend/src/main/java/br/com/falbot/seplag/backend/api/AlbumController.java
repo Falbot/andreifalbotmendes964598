@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
@@ -67,5 +68,11 @@ public class AlbumController {
     @GetMapping("/{id}/capa/link")
     public br.com.falbot.seplag.backend.servico.CapaAlbumServico.LinkPresignadoResponse obterLinkCapa(@PathVariable UUID id) {
         return capaServico.gerarLink(id);
+    }
+
+    @DeleteMapping("/{id}/capa")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removerCapa(@PathVariable UUID id) {
+        capaServico.remover(id);
     }
 }
