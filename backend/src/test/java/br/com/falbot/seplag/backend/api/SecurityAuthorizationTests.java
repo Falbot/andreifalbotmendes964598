@@ -17,7 +17,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.http.HttpHeaders;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
@@ -40,7 +39,7 @@ class SecurityAuthorizationTests extends IntegrationTestBase {
     
     @Test
     void rotaProtegida_semToken_deveRetornar401_album() throws Exception {
-        mvc.perform(get("/api/album"))
+        mvc.perform(get("/api/albuns"))
                 .andExpect(status().isUnauthorized());
     }
 

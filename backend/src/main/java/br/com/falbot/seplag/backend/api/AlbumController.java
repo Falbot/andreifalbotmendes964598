@@ -2,6 +2,7 @@ package br.com.falbot.seplag.backend.api;
 
 import br.com.falbot.seplag.backend.api.dto.AlbumRequests;
 import br.com.falbot.seplag.backend.api.dto.Responses;
+import br.com.falbot.seplag.backend.dominio.TipoArtista;
 import br.com.falbot.seplag.backend.servico.AlbumServico;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/albuns")
@@ -30,16 +32,17 @@ public class AlbumController {
     public Page<Responses.AlbumResponse> listar(
             @RequestParam(required = false) String titulo,
             @RequestParam(required = false) Integer ano,
+            @RequestParam(required = false, name = "tipoArtista") Set<TipoArtista> tiposArtista,
             Pageable pageable
     ) {
-        return servico.listar(titulo, ano, pageable)
-                .map(a -> new Responses.AlbumResponse(a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm()));
+        return servico.listar(titulo, ano, tiposArtista, pageable)
+                .map(this::toResponse);
     }
 
     @GetMapping("/{id}")
     public Responses.AlbumResponse obter(@PathVariable UUID id) {
         var a = servico.obter(id);
-        return new Responses.AlbumResponse(a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm());
+        return toResponse(a);
     }
 
     @PostMapping
@@ -49,9 +52,7 @@ public class AlbumController {
     ) {
         var a = servico.criar(req.titulo(), req.anoLancamento());
 
-        var resp = new Responses.AlbumResponse(
-                a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm()
-        );
+        var resp = toResponse(a);
 
         var location = uriBuilder
                 .path("/api/albuns/{id}")
@@ -64,7 +65,7 @@ public class AlbumController {
     @PutMapping("/{id}")
     public Responses.AlbumResponse atualizar(@PathVariable UUID id, @RequestBody @Valid AlbumRequests.Atualizar req) {
         var a = servico.atualizar(id, req.titulo(), req.anoLancamento());
-        return new Responses.AlbumResponse(a.getId(), a.getTitulo(), a.getAnoLancamento(), a.getCriadoEm(), a.getAtualizadoEm());
+        return toResponse(a);
     }
 
     @DeleteMapping("/{id}")
@@ -91,4 +92,20 @@ public class AlbumController {
     public void removerCapa(@PathVariable UUID id) {
         capaServico.remover(id);
     }
+
+
+    private Responses.AlbumResponse toResponse(br.com.falbot.seplag.backend.dominio.Album a) {
+        boolean temCantor = a.getArtistas().stream().anyMatch(ar -> ar.getTipo() == TipoArtista.CANTOR);
+        boolean temBanda = a.getArtistas().stream().anyMatch(ar -> ar.getTipo() == TipoArtista.BANDA);
+        return new Responses.AlbumResponse(
+                a.getId(),
+                a.getTitulo(),
+                a.getAnoLancamento(),
+                a.getCriadoEm(),
+                a.getAtualizadoEm(),
+                temCantor,
+                temBanda
+        );
+    }
+
 }

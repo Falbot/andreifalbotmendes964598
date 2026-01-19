@@ -20,6 +20,8 @@ public class Responses {
             String titulo,
             Integer anoLancamento,
             OffsetDateTime criadoEm,
-            OffsetDateTime atualizadoEm
+            OffsetDateTime atualizadoEm,
+            boolean temCantor,
+            boolean temBanda
     ) {}
 }

@@ -1,6 +1,7 @@
 package br.com.falbot.seplag.backend.servico;
 
 import br.com.falbot.seplag.backend.dominio.Album;
+import br.com.falbot.seplag.backend.dominio.TipoArtista;
 import br.com.falbot.seplag.backend.repositorio.AlbumRepositorio;
 import br.com.falbot.seplag.backend.repositorio.AlbumSpecs;
 import jakarta.persistence.EntityNotFoundException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.Set;
 
 @Service
 public class AlbumServico {
@@ -21,10 +23,11 @@ public class AlbumServico {
         this.albumRepo = albumRepo;
     }
 
-    public Page<Album> listar(String titulo, Integer ano, Pageable pageable) {
+    public Page<Album> listar(String titulo, Integer ano, Set<TipoArtista> tiposArtista, Pageable pageable) {
         Specification<Album> spec = Specification
                 .where(AlbumSpecs.tituloContem(titulo))
-                .and(AlbumSpecs.anoIgual(ano));
+                .and(AlbumSpecs.anoIgual(ano))
+                .and(AlbumSpecs.temArtistaDoTipo(tiposArtista));
         return albumRepo.findAll(spec, pageable);
     }
 

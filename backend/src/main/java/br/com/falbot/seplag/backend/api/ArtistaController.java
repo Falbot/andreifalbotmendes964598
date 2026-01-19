@@ -7,6 +7,8 @@ import br.com.falbot.seplag.backend.servico.ArtistaServico;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
@@ -28,9 +30,16 @@ public class ArtistaController {
     public Page<Responses.ArtistaResponse> listar(
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) TipoArtista tipo,
+            @RequestParam(required = false, defaultValue = "asc") String ordem,
             Pageable pageable
     ) {
-        return servico.listar(nome, tipo, pageable)
+        Pageable efetivo = pageable;
+        if (pageable.getSort().isUnsorted()) {
+            Sort s = "desc".equalsIgnoreCase(ordem) ? Sort.by("nome").descending() : Sort.by("nome").ascending();
+            efetivo = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), s);
+        }
+
+        return servico.listar(nome, tipo, efetivo)
                 .map(a -> new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm()));
     }
 
@@ -75,7 +84,10 @@ public class ArtistaController {
         return servico.listarAlbuns(id).stream()
                 .map(al -> new Responses.AlbumResponse(
                         al.getId(), al.getTitulo(), al.getAnoLancamento(),
-                        al.getCriadoEm(), al.getAtualizadoEm()))
+                        al.getCriadoEm(), al.getAtualizadoEm(),
+                        al.getArtistas().stream().anyMatch(ar -> ar.getTipo() == TipoArtista.CANTOR),
+                        al.getArtistas().stream().anyMatch(ar -> ar.getTipo() == TipoArtista.BANDA)
+                ))
                 .toList();
     }
 
