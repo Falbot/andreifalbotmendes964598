@@ -45,8 +45,19 @@ public class SecurityConfig {
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 }))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/**", "/api/ping").permitAll()
-                        .requestMatchers("/api/autenticacao/**").permitAll()
+                        .requestMatchers(
+                                "/actuator/**",
+                                "/api/ping",
+                                "/api/v1/ping",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/api-docs/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/api/autenticacao/**",
+                                "/api/v1/autenticacao/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(originBlock, UsernamePasswordAuthenticationFilter.class)

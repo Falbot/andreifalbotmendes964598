@@ -12,12 +12,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/artistas")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping({"/api/artistas", "/api/v1/artistas"})
 public class ArtistaController {
 
     private final ArtistaServico servico;

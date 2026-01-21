@@ -7,7 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/autenticacao")
+@RequestMapping({"/api/autenticacao", "/api/v1/autenticacao"})
 public class AutenticacaoController {
 
     private final AutenticacaoServico servico;

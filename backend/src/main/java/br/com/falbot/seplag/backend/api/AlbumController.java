@@ -13,11 +13,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.UUID;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/albuns")
+@SecurityRequirement(name = "bearerAuth")
+@RequestMapping({"/api/albuns", "/api/v1/albuns"})
 public class AlbumController {
 
     private final AlbumServico servico;
