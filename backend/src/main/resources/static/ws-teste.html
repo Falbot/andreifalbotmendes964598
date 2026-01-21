@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WS Test - Novos Álbuns</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    input { padding: 6px; }
+    button { padding: 6px 10px; cursor: pointer; }
+    pre { background: #f6f6f6; padding: 10px; border: 1px solid #ddd; max-height: 360px; overflow: auto; }
+    .ok { color: #0a7; }
+    .err { color: #c00; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket - Notificação de novo álbum</h2>
+
+  <div class="row">
+    <button id="btnConnect">Conectar WS</button>
+    <button id="btnDisconnect" disabled>Desconectar</button>
+    <span id="wsStatus">Status: desconectado</span>
+  </div>
+
+  <h3>Login (para chamar REST /api/v1/albuns)</h3>
+  <div class="row">
+    <input id="email" placeholder="email" value="teste+ws@exemplo.com" size="28" />
+    <input id="senha" placeholder="senha" value="123456" type="password" />
+    <button id="btnRegistrar">Registrar</button>
+    <button id="btnLogin">Login</button>
+    <span id="authStatus"></span>
+  </div>
+
+  <h3>Criar álbum (dispara evento em /topic/albuns)</h3>
+  <div class="row">
+    <input id="titulo" placeholder="título" value="Album WS Demo" size="28" />
+    <input id="ano" placeholder="ano" value="2026" size="6" />
+    <button id="btnCriarAlbum" disabled>Criar via REST</button>
+  </div>
+
+  <h3>Log</h3>
+  <pre id="log"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <script>
+    const baseUrl = window.location.origin; // mesma origem do backend (8080)
+    let stompClient = null;
+    let accessToken = null;
+    let subscription = null;
+
+    const logEl = document.getElementById("log");
+    const wsStatus = document.getElementById("wsStatus");
+    const authStatus = document.getElementById("authStatus");
+
+    function log(msg, cls) {
+      const line = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+      logEl.textContent += line;
+      logEl.scrollTop = logEl.scrollHeight;
+      if (cls) {
+        authStatus.className = cls;
+      }
+    }
+
+    function setWsStatus(text) {
+      wsStatus.textContent = "Status: " + text;
+    }
+
+    async function postJson(path, body, auth=false) {
+      const headers = { "Content-Type": "application/json" };
+      if (auth && accessToken) headers["Authorization"] = "Bearer " + accessToken;
+
+      const res = await fetch(baseUrl + path, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json") ? await res.json() : await res.text();
+      if (!res.ok) throw { status: res.status, data };
+      return data;
+    }
+
+    document.getElementById("btnConnect").onclick = () => {
+      const socket = new SockJS(baseUrl + "/ws");
+      stompClient = Stomp.over(socket);
+      stompClient.debug = null;
+
+      stompClient.connect({}, () => {
+        setWsStatus("conectado");
+        document.getElementById("btnConnect").disabled = true;
+        document.getElementById("btnDisconnect").disabled = false;
+
+        subscription = stompClient.subscribe("/topic/albuns", (message) => {
+          log("Evento recebido /topic/albuns: " + message.body, "ok");
+        });
+
+        log("Conectado e inscrito em /topic/albuns", "ok");
+      }, (err) => {
+        setWsStatus("erro");
+        log("Erro WS: " + JSON.stringify(err), "err");
+      });
+    };
+
+    document.getElementById("btnDisconnect").onclick = () => {
+      if (subscription) subscription.unsubscribe();
+      if (stompClient) stompClient.disconnect(() => {
+        setWsStatus("desconectado");
+        document.getElementById("btnConnect").disabled = false;
+        document.getElementById("btnDisconnect").disabled = true;
+        log("Desconectado", "ok");
+      });
+    };
+
+    document.getElementById("btnRegistrar").onclick = async () => {
+      try {
+        const email = document.getElementById("email").value.trim();
+        const senha = document.getElementById("senha").value;
+        await postJson("/api/v1/autenticacao/registrar", { email, senha });
+        log("Registrado com sucesso: " + email, "ok");
+      } catch (e) {
+        log("Falha ao registrar: " + JSON.stringify(e), "err");
+      }
+    };
+
+    document.getElementById("btnLogin").onclick = async () => {
+      try {
+        const email = document.getElementById("email").value.trim();
+        const senha = document.getElementById("senha").value;
+        const data = await postJson("/api/v1/autenticacao/login", { email, senha });
+        accessToken = data.accessToken;
+        document.getElementById("btnCriarAlbum").disabled = false;
+        authStatus.textContent = "Logado ✅";
+        authStatus.className = "ok";
+        log("Login OK. Token recebido.", "ok");
+      } catch (e) {
+        authStatus.textContent = "Login falhou ❌";
+        authStatus.className = "err";
+        log("Falha no login: " + JSON.stringify(e), "err");
+      }
+    };
+
+    document.getElementById("btnCriarAlbum").onclick = async () => {
+      try {
+        const titulo = document.getElementById("titulo").value.trim();
+        const anoLancamento = parseInt(document.getElementById("ano").value, 10);
+        const data = await postJson("/api/v1/albuns", { titulo, anoLancamento }, true);
+        log("Álbum criado via REST: " + JSON.stringify(data), "ok");
+        log("Agora aguarde o evento WS (deve chegar imediatamente).", "ok");
+      } catch (e) {
+        log("Falha ao criar álbum: " + JSON.stringify(e), "err");
+      }
+    };
+  </script>
+</body>
+</html>

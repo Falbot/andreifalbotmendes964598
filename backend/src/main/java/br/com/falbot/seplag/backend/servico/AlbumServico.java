@@ -18,9 +18,11 @@ import java.util.Set;
 public class AlbumServico {
 
     private final AlbumRepositorio albumRepo;
+    private final AlbumWsPublisher albumWsPublisher;
 
-    public AlbumServico(AlbumRepositorio albumRepo) {
+    public AlbumServico(AlbumRepositorio albumRepo, AlbumWsPublisher albumWsPublisher) {
         this.albumRepo = albumRepo;
+        this.albumWsPublisher = albumWsPublisher;
     }
 
     public Page<Album> listar(String titulo, Integer ano, Set<TipoArtista> tiposArtista, Pageable pageable) {
@@ -40,7 +42,16 @@ public class AlbumServico {
         var a = new Album();
         a.setTitulo(titulo);
         a.setAnoLancamento(anoLancamento);
-        return albumRepo.save(a);
+        var salvo = albumRepo.save(a);
+
+        albumWsPublisher.notificarNovoAlbum(
+            new br.com.falbot.seplag.backend.api.dto.AlbumCriadoWsDTO(
+                salvo.getId(),
+                salvo.getTitulo(),
+                salvo.getAnoLancamento()
+            )
+        );
+        return salvo;
     }
 
     @Transactional
