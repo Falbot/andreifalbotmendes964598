@@ -23,11 +23,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Map<String, Estado> estados = new ConcurrentHashMap<>();
 
+    private boolean isWhitelisted(String path) {
+    return path.startsWith("/swagger-ui")
+        || path.equals("/swagger-ui.html")
+        || path.startsWith("/api-docs")
+        || path.startsWith("/v3/api-docs")
+        || path.startsWith("/actuator")
+        || path.startsWith("/ws");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws java.io.IOException, jakarta.servlet.ServletException {
 
         String path = req.getRequestURI();
-        if (path.startsWith("/actuator")) {
+        if (isWhitelisted(path)) {
             chain.doFilter(req, res);
             return;
         }
