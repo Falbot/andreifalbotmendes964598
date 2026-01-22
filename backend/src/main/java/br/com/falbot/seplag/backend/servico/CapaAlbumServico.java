@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -22,7 +24,7 @@ import java.util.UUID;
 
 @Service
 public class CapaAlbumServico {
-
+    private static final Logger log = LoggerFactory.getLogger(CapaAlbumServico.class);
     private static final Duration EXPIRACAO_LINK = Duration.ofMinutes(30);
 
     private final AlbumServico albumServico;
@@ -66,6 +68,8 @@ public class CapaAlbumServico {
         } catch (IOException e) {
             throw new IllegalArgumentException("Falha ao ler o arquivo enviado.", e);
         } catch (RuntimeException e) {
+            log.error("Falha ao enviar para MinIO. bucket={}, key={}, size={}, contentType={}, endpoint={}",
+                    props.bucket, key, arquivo.getSize(), arquivo.getContentType(), props.endpoint, e);
             throw new IllegalArgumentException("Falha ao enviar a imagem para o MinIO.", e);
         }
 

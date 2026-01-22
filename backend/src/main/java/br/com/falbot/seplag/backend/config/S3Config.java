@@ -16,14 +16,16 @@ public class S3Config {
 
   @Bean
   public S3Client s3Client(S3Props props) {
-    var creds = AwsBasicCredentials.create(props.accessKey, props.secretKey);
+    var creds = StaticCredentialsProvider.create(AwsBasicCredentials.create(props.accessKey, props.secretKey));
+    var s3cfg = S3Configuration.builder()
+            .pathStyleAccessEnabled(true)
+            .build();
+
     return S3Client.builder()
-        .credentialsProvider(StaticCredentialsProvider.create(creds))
+        .credentialsProvider(creds)
+        .serviceConfiguration(s3cfg)
         .endpointOverride(URI.create(props.endpoint))
         .region(Region.of(props.region))
-        .serviceConfiguration(S3Configuration.builder()
-            .pathStyleAccessEnabled(true) // MinIO
-            .build())
         .build();
   }
 
@@ -32,7 +34,7 @@ public class S3Config {
     var creds = AwsBasicCredentials.create(props.accessKey, props.secretKey);
     return S3Presigner.builder()
         .credentialsProvider(StaticCredentialsProvider.create(creds))
-        .endpointOverride(URI.create(props.endpoint))
+        .endpointOverride(URI.create(props.publicEndpoint))
         .region(Region.of(props.region))
         .serviceConfiguration(S3Configuration.builder()
             .pathStyleAccessEnabled(true)

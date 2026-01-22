@@ -24,8 +24,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final Map<String, Estado> estados = new ConcurrentHashMap<>();
 
     private boolean isWhitelisted(String path) {
-    return path.startsWith("/swagger-ui")
+    return 
+           path.equals("/test-capa.html")
         || path.equals("/swagger-ui.html")
+        || path.startsWith("/swagger-ui")
         || path.startsWith("/api-docs")
         || path.startsWith("/v3/api-docs")
         || path.startsWith("/actuator")

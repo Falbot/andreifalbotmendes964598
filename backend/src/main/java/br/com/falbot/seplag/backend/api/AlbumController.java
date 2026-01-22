@@ -48,10 +48,8 @@ public class AlbumController {
     }
 
     @PostMapping
-    public ResponseEntity<Responses.AlbumResponse> criar(
-            @RequestBody @Valid AlbumRequests.Criar req,
-            UriComponentsBuilder uriBuilder
-    ) {
+    public ResponseEntity<Responses.AlbumResponse> criar(@RequestBody @Valid AlbumRequests.Criar req, UriComponentsBuilder uriBuilder)
+    {
         var a = servico.criar(req.titulo(), req.anoLancamento());
 
         var resp = toResponse(a);

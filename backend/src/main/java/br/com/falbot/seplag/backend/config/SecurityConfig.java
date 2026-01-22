@@ -54,7 +54,8 @@ public class SecurityConfig {
                                 "/api-docs/**",
                                 "/v3/api-docs/**",
                                 "/ws/**",
-                                "/ws-teste.html"
+                                "/ws-teste.html",
+                                "/test-capa.html"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/autenticacao/**",
