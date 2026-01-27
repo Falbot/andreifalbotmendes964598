@@ -14,10 +14,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.UUID;
 import java.util.Set;
 import java.util.List;
+
 
 @RestController
 @SecurityRequirement(name = "bearerAuth")
@@ -31,7 +34,8 @@ public class AlbumController {
         this.servico = servico;
         this.capaServico = capaServico;
     }
-
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Listar álbuns")
     @Transactional(readOnly = true)
     @GetMapping
     public Page<Responses.AlbumResponse> listarAlbuns(
@@ -44,6 +48,8 @@ public class AlbumController {
                 .map(this::toResponse);
     }
 
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Listar álbum por ID")
     @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public Responses.AlbumResponse obterAlbum(@PathVariable UUID id) {
@@ -51,6 +57,8 @@ public class AlbumController {
         return toResponse(a);
     }
 
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Criar álbum")
     @PostMapping
     public ResponseEntity<Responses.AlbumResponse> criarAlbum(@RequestBody @Valid AlbumRequests.Criar req, UriComponentsBuilder uriBuilder)
     {
@@ -66,18 +74,24 @@ public class AlbumController {
         return ResponseEntity.created(location).body(resp);
     }
 
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Atualizar álbum")
     @PutMapping("/{id}")
     public Responses.AlbumResponse atualizarAlbum(@PathVariable UUID id, @RequestBody @Valid AlbumRequests.Atualizar req) {
         var a = servico.atualizar(id, req.titulo(), req.anoLancamento());
         return toResponse(a);
     }
 
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Deletar álbum")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirAlbum(@PathVariable UUID id) {
         servico.excluir(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Tag(name = "Álbuns")
+    @Operation(summary = "Enviar capa do álbum")
     @PostMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public br.com.falbot.seplag.backend.servico.CapaAlbumServico.LinkPresignadoResponse enviarCapa(
             @PathVariable UUID id,
@@ -86,6 +100,8 @@ public class AlbumController {
         return capaServico.enviar(id, arquivo);
     }
 
+    @Tag(name = "Capas")
+    @Operation(summary = "Enviar capas de álbum")
     @PostMapping(path = "/{id}/capas", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<br.com.falbot.seplag.backend.servico.CapaAlbumServico.CapaCriadaResponse> adicionarCapasLote(
             @PathVariable UUID id,
@@ -94,6 +110,8 @@ public class AlbumController {
         return capaServico.adicionarLote(id, arquivos);
     }
 
+    @Tag(name = "Capas")
+    @Operation(summary = "Listar capas de álbum")
     @GetMapping("/{id}/capas")
     public List<br.com.falbot.seplag.backend.servico.CapaAlbumServico.CapaItemComLinkResponse> listarCapasComLinks(
             @PathVariable UUID id
@@ -101,6 +119,8 @@ public class AlbumController {
         return capaServico.listarComLinks(id);
     }
 
+    @Tag(name = "Capas")
+    @Operation(summary = "Listar capa de álbum por ID")
     @GetMapping("/{id}/capas/{capaId}")
     public br.com.falbot.seplag.backend.servico.CapaAlbumServico.LinkPresignadoResponse obterLinkCapaPorId(
             @PathVariable UUID id,
@@ -109,6 +129,8 @@ public class AlbumController {
         return capaServico.gerarLink(id, capaId);
     }
 
+    @Tag(name = "Capas")
+    @Operation(summary = "Deletar capa de álbum")
     @DeleteMapping("/{id}/capas/{capaId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removerCapaPorId(
@@ -118,7 +140,8 @@ public class AlbumController {
         capaServico.remover(id, capaId);
     }
 
-//--
+    @Tag(name = "Capas")
+    @Operation(summary = "Definir capa principal de álbum")
     @PutMapping("/{id}/capas/{capaId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void definirCapaPrincipal(@PathVariable UUID id, @PathVariable UUID capaId) {

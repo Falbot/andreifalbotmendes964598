@@ -12,11 +12,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Artistas")
 @RestController
 @SecurityRequirement(name = "bearerAuth")
 @RequestMapping({"/api/artistas", "/api/v1/artistas"})
@@ -27,7 +30,7 @@ public class ArtistaController {
     public ArtistaController(ArtistaServico servico) {
         this.servico = servico;
     }
-
+    @Operation(summary = "Listar artistas (paginado)")
     @GetMapping
     public Page<Responses.ArtistaResponse> listar(
             @RequestParam(required = false) String nome,
@@ -45,12 +48,14 @@ public class ArtistaController {
                 .map(a -> new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm()));
     }
 
+    @Operation(summary = "Obter artista por ID")
     @GetMapping("/{id}")
     public Responses.ArtistaResponse obter(@PathVariable UUID id) {
         var a = servico.obter(id);
         return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
     }
 
+    @Operation(summary = "Criar artista")
     @PostMapping
     public ResponseEntity<Responses.ArtistaResponse> criar(
             @RequestBody @Valid ArtistaRequests.Criar req,
@@ -69,18 +74,21 @@ public class ArtistaController {
         return ResponseEntity.created(location).body(resp);
     }
 
+    @Operation(summary = "Atualizar artista")
     @PutMapping("/{id}")
     public Responses.ArtistaResponse atualizar(@PathVariable UUID id, @RequestBody @Valid ArtistaRequests.Atualizar req) {
         var a = servico.atualizar(id, req.nome(), req.tipo());
         return new Responses.ArtistaResponse(a.getId(), a.getNome(), a.getTipo(), a.getCriadoEm(), a.getAtualizadoEm());
     }
 
+    @Operation(summary = "Remover artista")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         servico.excluir(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Listar álbuns de um artista (paginado)")
     @GetMapping("/{id}/albuns")
     public List<Responses.AlbumResponse> listarAlbuns(@PathVariable UUID id) {
         return servico.listarAlbuns(id).stream()
@@ -93,12 +101,14 @@ public class ArtistaController {
                 .toList();
     }
 
+    @Operation(summary = "Associar artista a um álbum")
     @PostMapping("/{id}/albuns/{albumId}")
     public ResponseEntity<Void> vincular(@PathVariable UUID id, @PathVariable UUID albumId) {
         servico.vincularAlbum(id, albumId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Desassociar artista de um álbum")
     @DeleteMapping("/{id}/albuns/{albumId}")
     public ResponseEntity<Void> desvincular(@PathVariable UUID id, @PathVariable UUID albumId) {
         servico.desvincularAlbum(id, albumId);
