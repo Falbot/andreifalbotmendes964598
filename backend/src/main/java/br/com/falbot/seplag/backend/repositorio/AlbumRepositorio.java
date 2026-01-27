@@ -12,11 +12,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface AlbumRepositorio extends JpaRepository<Album, UUID>, JpaSpecificationExecutor<Album> {
 
     @EntityGraph(attributePaths = "artistas")
     Page<Album> findAll(Specification<Album> spec, Pageable pageable);
+    @EntityGraph(attributePaths = "artistas")
+    Optional<Album> findById(UUID id);
 
 
     @EntityGraph(attributePaths = "artistas")

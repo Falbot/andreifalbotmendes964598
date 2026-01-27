@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 @OpenAPIDefinition(
         info = @Info(

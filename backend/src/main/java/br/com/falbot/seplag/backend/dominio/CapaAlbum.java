@@ -16,7 +16,7 @@ public class CapaAlbum {
     @Column(name = "id", nullable = false)
     private UUID id;
 
-    @Column(name = "album_id", nullable = false, unique = true)
+    @Column(name = "album_id", nullable = false) // <-- remove unique=true
     private UUID albumId;
 
     @Column(name = "objeto_chave", nullable = false, length = 512)
@@ -31,6 +31,9 @@ public class CapaAlbum {
     @Column(name = "criado_em", nullable = false)
     private OffsetDateTime criadoEm;
 
+    @Column(name = "principal", nullable = false)
+    private boolean principal = false;
+
     @PrePersist
     void prePersist() {
         if (criadoEm == null) criadoEm = OffsetDateTime.now();
@@ -38,6 +41,7 @@ public class CapaAlbum {
 
     // getters/setters
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; } // <-- necessário para usar o UUID na chave do MinIO
 
     public UUID getAlbumId() { return albumId; }
     public void setAlbumId(UUID albumId) { this.albumId = albumId; }
@@ -52,4 +56,7 @@ public class CapaAlbum {
     public void setTamanhoBytes(long tamanhoBytes) { this.tamanhoBytes = tamanhoBytes; }
 
     public OffsetDateTime getCriadoEm() { return criadoEm; }
+
+    public boolean isPrincipal() { return principal; }
+    public void setPrincipal(boolean principal) { this.principal = principal; }
 }
