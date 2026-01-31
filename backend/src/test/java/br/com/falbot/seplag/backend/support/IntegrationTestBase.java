@@ -62,10 +62,14 @@ public abstract class IntegrationTestBase {
         
         //S3/MinIO
         registry.add("app.s3.endpoint", IntegrationTestBase::minioEndpoint);
+        registry.add("app.s3.public-endpoint", IntegrationTestBase::minioEndpoint);
         registry.add("app.s3.region", () -> MINIO_REGION);
         registry.add("app.s3.access-key", () -> MINIO_ACCESS_KEY);
         registry.add("app.s3.secret-key", () -> MINIO_SECRET_KEY);
         registry.add("app.s3.bucket", () -> MINIO_BUCKET);
+
+        registry.add("app.cors.origins-permitidas", () -> "http://localhost:5173");
+
     }
 
     @BeforeAll

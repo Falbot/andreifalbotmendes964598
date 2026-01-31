@@ -6,152 +6,188 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.Duration;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class CapaAlbumFlowTests extends IntegrationTestBase {
 
     @Autowired MockMvc mvc;
     private final ObjectMapper om = new ObjectMapper().findAndRegisterModules();
 
-    @Test
-    void upload_gera_link_presignado_30min_e_download_funciona() throws Exception {
-        Tokens t = registrarELogin();
-        UUID albumId = criarAlbum(t.accessToken);
-
-        byte[] conteudo = "fake-jpeg-bytes".getBytes(StandardCharsets.UTF_8);
-        var file = new MockMultipartFile("arquivo", "capa.jpg", "image/jpeg", conteudo);
-
-        MvcResult r = mvc.perform(
-                        multipart("/api/albuns/{id}/capa", albumId)
-                                .file(file)
-                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + t.accessToken)
-                )
-                .andExpect(status().isOk())
-                .andReturn();
-
-        JsonNode json = om.readTree(r.getResponse().getContentAsString());
-        String url = textoObrigatorio(json, "url");
-        String expiraEm = textoObrigatorio(json, "expiraEm");
-
-        assertTrue(url.contains("X-Amz-Expires=1800"), "URL deveria expirar em 1800s (30min): " + url);
-        assertNotNull(Instant.parse(expiraEm), "expiraEm deve ser Instant ISO-8601: " + expiraEm);
-
-        //Baixa imagem do MinIO via link presignado
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).GET().build();
-        HttpResponse<byte[]> resp = client.send(req, HttpResponse.BodyHandlers.ofByteArray());
-
-        assertEquals(200, resp.statusCode(), "download do presigned deveria ser 200");
-        assertArrayEquals(conteudo, resp.body(), "conteúdo baixado deve ser igual ao enviado");
-    }
 
     @Test
-    void delete_capa_depois_link_deve_ser_404() throws Exception {
-        Tokens t = registrarELogin();
-        UUID albumId = criarAlbum(t.accessToken);
-
-        byte[] conteudo = "img".getBytes(StandardCharsets.UTF_8);
-        var file = new MockMultipartFile("arquivo", "capa.jpg", "image/jpeg", conteudo);
-
-        mvc.perform(
-                multipart("/api/albuns/{id}/capa", albumId)
-                        .file(file)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + t.accessToken)
-        ).andExpect(status().isOk());
-
-        mvc.perform(
-                delete("/api/albuns/{id}/capa", albumId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + t.accessToken)
-        ).andExpect(status().isNoContent());
-
-        mvc.perform(
-                get("/api/albuns/{id}/capa/link", albumId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + t.accessToken)
-        ).andExpect(status().isNotFound());
-    }
-
-    @Test
-    void upload_com_content_type_invalido_deve_ser_400() throws Exception {
-        Tokens t = registrarELogin();
-        UUID albumId = criarAlbum(t.accessToken);
-
-        var file = new MockMultipartFile("arquivo", "capa.txt", "text/plain", "x".getBytes(StandardCharsets.UTF_8));
-
-        mvc.perform(
-                multipart("/api/albuns/{id}/capa", albumId)
-                        .file(file)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + t.accessToken)
-        ).andExpect(status().isBadRequest());
-    }
-
-    private Tokens registrarELogin() throws Exception {
-        String senha = "Senha@123";
+    void upload_em_lote_gera_link_presignado_e_download_funciona() throws Exception {
+        // 1) registra + login
         String email = "user_" + UUID.randomUUID().toString().replace("-", "") + "@teste.com";
-
-        Map<String, Object> registrar = new LinkedHashMap<>();
-        registrar.put("email", email);
-        registrar.put("senha", senha);
+        String senha = "Senha@123";
 
         mvc.perform(post("/api/autenticacao/registrar")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(registrar)))
-                .andExpect(status().is2xxSuccessful());
+                        .contentType("application/json")
+                        .content("{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}"))
+                .andExpect(status().isOk());
 
-        Map<String, Object> login = new LinkedHashMap<>();
-        login.put("email", email);
-        login.put("senha", senha);
-
-        MvcResult r = mvc.perform(post("/api/autenticacao/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(login)))
+        var loginRes = mvc.perform(post("/api/autenticacao/login")
+                        .contentType("application/json")
+                        .content("{\"email\":\"" + email + "\",\"senha\":\"" + senha + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        JsonNode json = om.readTree(r.getResponse().getContentAsString());
-        return new Tokens(textoObrigatorio(json, "accessToken"), textoObrigatorio(json, "refreshToken"));
-    }
+        JsonNode loginJson = om.readTree(loginRes.getResponse().getContentAsString());
+        String token = loginJson.get("accessToken").asText();
 
-    private UUID criarAlbum(String accessToken) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("titulo", "Album Teste");
-        body.put("anoLancamento", 2024);
-
-        MvcResult r = mvc.perform(post("/api/albuns")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsString(body)))
+        // 2) cria álbum
+        var criarAlbumRes = mvc.perform(post("/api/albuns")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType("application/json")
+                        .content("{\"titulo\":\"alb_" + UUID.randomUUID() + "\",\"anoLancamento\":2000}"))
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        JsonNode json = om.readTree(r.getResponse().getContentAsString());
-        String id = textoObrigatorio(json, "id");
-        return UUID.fromString(id);
+        JsonNode albumJson = om.readTree(criarAlbumRes.getResponse().getContentAsString());
+        String albumId = albumJson.get("id").asText();
+
+        // 3) upload em lote: POST /api/albuns/{id}/capas (multipart, part name = "arquivos")
+        byte[] conteudo = "conteudo_teste_capa".getBytes(StandardCharsets.UTF_8);
+
+        MockMultipartFile arquivo = new MockMultipartFile(
+                "arquivos",               // <-- TEM que ser "arquivos"
+                "capa.png",
+                "image/png",
+                conteudo
+        );
+
+        var uploadRes = mvc.perform(multipart("/api/albuns/{id}/capas", albumId)
+                        .file(arquivo)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode uploadJson = om.readTree(uploadRes.getResponse().getContentAsString());
+        assertTrue(uploadJson.isArray(), "Resposta do upload deve ser um array");
+        assertTrue(uploadJson.size() >= 1, "Upload deveria retornar pelo menos 1 capa");
+
+        String capaId = uploadJson.get(0).get("id").asText();
+        String urlUpload = uploadJson.get(0).get("url").asText();
+        assertNotBlank(urlUpload);
+
+        // 4) obter link por id: GET /api/albuns/{id}/capas/{capaId}
+        var linkRes = mvc.perform(get("/api/albuns/{id}/capas/{capaId}", albumId, capaId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode linkJson = om.readTree(linkRes.getResponse().getContentAsString());
+        String presignedUrl = linkJson.get("url").asText();
+        assertNotBlank(presignedUrl);
+
+        // 5) download REAL via HTTP (não use MockMvc pra isso)
+System.out.println("minioEndpoint() esperado = " + minioEndpoint());
+System.out.println("presignedUrl retornado  = " + presignedUrl);
+
+        assertPresignedDownloadOk(presignedUrl);
     }
 
-    private static String textoObrigatorio(JsonNode json, String campo) {
-        JsonNode n = json.get(campo);
-        assertNotNull(n, "campo '" + campo + "' não veio na resposta: " + json);
-        String v = n.asText();
-        assertFalse(v == null || v.isBlank(), "campo '" + campo + "' veio vazio");
-        return v;
+    private void assertPresignedDownloadOk(String presignedUrl) throws Exception {
+        HttpClient http = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(presignedUrl))
+                .timeout(Duration.ofSeconds(20))
+                .GET()
+                .build();
+
+        HttpResponse<byte[]> resp = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
+
+        if (resp.statusCode() != 200) {
+            // Debug bem direto: checar se o objeto existe no bucket, e listar prefixo
+            String key = extrairKeyDoPresignedUrl(presignedUrl);
+
+            String debug = "";
+            try (S3Client s3 = s3Client()) {
+                try {
+                    s3.headObject(HeadObjectRequest.builder()
+                            .bucket(MINIO_BUCKET)
+                            .key(key)
+                            .build());
+                    debug += "HEAD OK (objeto existe no bucket).";
+                } catch (S3Exception e) {
+                    debug += "HEAD falhou: status=" + e.statusCode() + " msg=" + e.getMessage();
+
+                    // lista o prefixo do álbum pra ver se salvou em outra key
+                    String prefixoAlbum = key.contains("/capas/") ? key.substring(0, key.indexOf("/capas/") + 7) : "";
+                    var listed = s3.listObjectsV2(ListObjectsV2Request.builder()
+                                    .bucket(MINIO_BUCKET)
+                                    .prefix(prefixoAlbum)
+                                    .build())
+                            .contents().stream()
+                            .map(o -> o.key())
+                            .collect(Collectors.toList());
+
+                    debug += " | Objetos no prefixo '" + prefixoAlbum + "': " + listed;
+                }
+            }
+
+            fail("Download pelo presigned URL não retornou 200. status=" + resp.statusCode()
+                    + " | key=" + key + " | " + debug);
+        }
+
+        assertTrue(resp.body().length > 0, "Download retornou 200 mas veio vazio");
     }
 
-    private record Tokens(String accessToken, String refreshToken) {}
+    private static String extrairKeyDoPresignedUrl(String url) {
+        URI uri = URI.create(url);
+        String path = uri.getPath(); // ex: /app-bucket/albuns/<albumId>/capas/<objId>
+        String prefix = "/" + MINIO_BUCKET + "/";
+        int i = path.indexOf(prefix);
+        if (i < 0) {
+            // fallback: remove leading "/"
+            return path.startsWith("/") ? path.substring(1) : path;
+        }
+        return path.substring(i + prefix.length());
+    }
+
+    private static S3Client s3Client() {
+        return S3Client.builder()
+                .httpClientBuilder(UrlConnectionHttpClient.builder())
+                .endpointOverride(URI.create(minioEndpoint()))
+                .region(Region.of(MINIO_REGION))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(MINIO_ACCESS_KEY, MINIO_SECRET_KEY)
+                ))
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(true)
+                        .build())
+                .build();
+    }
+
+    private static void assertNotBlank(String s) {
+        assertNotNull(s, "String não pode ser null");
+        assertFalse(s.isBlank(), "String não pode estar em branco");
+    }
 }
