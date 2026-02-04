@@ -1,0 +1,6 @@
+@'
+node_modules
+dist
+.vscode
+.DS_Store
+'@ | Set-Content -Encoding UTF8 frontend\.dockerignore
