@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.UUID;
@@ -39,8 +40,13 @@ public class AlbumController {
     @Transactional(readOnly = true)
     @GetMapping
     public Page<Responses.AlbumResponse> listarAlbuns(
+            @Parameter(description = "Filtro por título (contém, case-insensitive)", example = "Bem Sertanejo")
             @RequestParam(required = false) String titulo,
+
+            @Parameter(description = "Ano de lançamento (exato)", example = "2018")
             @RequestParam(required = false) Integer ano,
+
+            @Parameter(description = "Filtrar por tipo de artista associado (pode repetir o parâmetro)", example = "&tipoArtista=CANTOR&tipoArtista=BANDA")
             @RequestParam(required = false, name = "tipoArtista") Set<TipoArtista> tiposArtista,
             Pageable pageable
     ) {

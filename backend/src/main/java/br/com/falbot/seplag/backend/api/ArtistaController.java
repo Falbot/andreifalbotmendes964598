@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
@@ -30,11 +31,29 @@ public class ArtistaController {
     public ArtistaController(ArtistaServico servico) {
         this.servico = servico;
     }
-    @Operation(summary = "Listar artistas (paginado)")
+    @Operation(
+        summary = "Listar artistas (com filtros, ordenação e paginação)",
+        description = """
+            Retorna artistas com suporte a filtros e paginação.
+
+            Paginação (query params):
+            - page: índice da página (qual página quer trazer)
+            - size: tamanho da página
+            - sort: ordenação (pode repetir). Ex.: sort=nome,asc
+
+            Exemplo:
+            GET /api/v1/artistas?nome=mi&tipo=BANDA&ordem=asc&page=0&size=1&sort=nome,asc
+            """
+    )
     @GetMapping
     public Page<Responses.ArtistaResponse> listar(
+            @Parameter(description = "Filtro por nome (contém, case-insensitive)")
             @RequestParam(required = false) String nome,
+
+            @Parameter(description = "Filtro por tipo do artista")
             @RequestParam(required = false) TipoArtista tipo,
+
+            @Parameter(description = "Ordenação por nome do artista ('asc' ou 'desc')")
             @RequestParam(required = false, defaultValue = "asc") String ordem,
             Pageable pageable
     ) {

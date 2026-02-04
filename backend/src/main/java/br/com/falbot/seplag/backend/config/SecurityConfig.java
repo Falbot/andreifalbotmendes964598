@@ -105,7 +105,7 @@ public class SecurityConfig {
                 .addFilterBefore(originBlock, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // ✅ Só adiciona RateLimit se ele existir como Bean (e isso depende da property)
+        //Só adiciona RateLimit se ele existir como Bean
         RateLimitFilter rateLimitFilter = rateLimitFilterProvider.getIfAvailable();
         boolean allowAll = permitidas.contains("*");
         if (!allowAll) {
