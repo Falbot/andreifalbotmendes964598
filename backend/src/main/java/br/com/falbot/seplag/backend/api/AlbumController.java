@@ -5,8 +5,11 @@ import br.com.falbot.seplag.backend.api.dto.Responses;
 import br.com.falbot.seplag.backend.dominio.TipoArtista;
 import br.com.falbot.seplag.backend.servico.AlbumServico;
 import jakarta.validation.Valid;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
@@ -48,6 +51,9 @@ public class AlbumController {
 
             @Parameter(description = "Filtrar por tipo de artista associado (pode repetir o parâmetro)", example = "&tipoArtista=CANTOR&tipoArtista=BANDA")
             @RequestParam(required = false, name = "tipoArtista") Set<TipoArtista> tiposArtista,
+
+            @ParameterObject
+            @PageableDefault(size = 20)
             Pageable pageable
     ) {
         return servico.listar(titulo, ano, tiposArtista, pageable)
