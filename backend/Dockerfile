@@ -9,18 +9,22 @@ COPY .mvn .mvn
 RUN chmod +x mvnw
 
 #Baixa dependências antes de copiar o código
-RUN ./mvnw -q -DskipTests dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw -q -DskipTests dependency:go-offline
 
 #Copia o restante e compila
 COPY src src
-RUN ./mvnw -q -DskipTests package
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw -q -DskipTests package
 
 # ========= Runtime stage =========
-FROM eclipse-temurin:17-jre-jammy
+#Usar alpine para uma imagem menor
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-
+RUN apk add --no-cache curl
 #Instala curl (para healthcheck do compose)
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+#apt-get não existe nessa imagem
+#RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 #Copia o jar gerado
 COPY --from=build /app/target/*.jar /app/app.jar

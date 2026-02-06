@@ -1,8 +1,11 @@
-package br.com.falbot.seplag.backend.servico;
+package br.com.falbot.seplag.backend;
 
 import br.com.falbot.seplag.backend.api.dto.AlbumCriadoWsDTO;
 import br.com.falbot.seplag.backend.dominio.Album;
 import br.com.falbot.seplag.backend.repositorio.AlbumRepositorio;
+import br.com.falbot.seplag.backend.servico.AlbumServico;
+import br.com.falbot.seplag.backend.servico.AlbumWsPublisher;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
